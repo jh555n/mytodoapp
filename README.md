@@ -13,8 +13,9 @@ Flutter 3.47.7·Dart 3.13.5와 Android SDK 36을 설치하고, Android·iOS 프�
 - `flutter test --no-pub`: 16개 통과. 반복·공휴일 이동, SQLite 영구 저장, iCalendar, 캘린더 충돌 및 화면 등록 흐름을 검사합니다.
 - 공식 Android command-line tools 아카이브 체크섬 검증, SDK 플랫폼·빌드 도구·NDK 설치 완료.
 - `flutter build apk --debug --no-pub`: 성공. 결과는 `build/app/outputs/flutter-apk/app-debug.apk`입니다.
+- macOS GitHub Actions의 Xcode 16.4에서 iOS 시뮬레이터 빌드 성공. `Runner.app`에 `QuickAddWidget.appex`가 포함됐고, 위젯 설정 스크립트 재실행도 같은 프로젝트를 유지했습니다. [빌드 결과](https://github.com/jh555n/mytodoapp/actions/runs/38128912337)의 Artifacts에서 `dayweave-ios-simulator`를 내려받을 수 있습니다.
 
-OAuth 인증, 실제 iCloud 서버, 알림, 위젯, EventKit은 실기기 검증이 필요합니다. iOS 빌드는 macOS와 Xcode에서 확인해야 합니다.
+OAuth 인증, 실제 iCloud 서버, 알림, 위젯, EventKit은 실기기 검증이 필요합니다. iOS 산출물은 시뮬레이터용이며, 실기기 설치와 배포에는 Apple 서명 설정이 필요합니다.
 
 ## 구현한 코드
 
@@ -71,10 +72,12 @@ iOS 위젯 타깃 등록은 macOS에서 `xcodeproj` Ruby gem이 설치된 상태
 
 ```sh
 ruby tool/configure_widget.rb
-flutter build ios --simulator
+flutter build ios --simulator --debug --no-codesign
 ```
 
 Xcode에서 Runner와 QuickAddWidget의 서명 팀을 선택해야 실기기에 설치할 수 있습니다. iOS 최소 타깃은 위젯 설정 스크립트에서 17.0으로 맞춥니다. 게시용 Android 키·Apple 서명 설정은 별도로 준비해야 합니다.
+
+GitHub의 `build/ios-xcode` 브랜치에 앱 소스와 빌드 구성을 올렸습니다. `.github/workflows/ios-build.yml`은 macOS에서 앱·위젯을 함께 빌드하고 시뮬레이터 앱 ZIP과 로그를 보관합니다. 저장소 Actions의 **iOS Xcode build → Run workflow**에서 다시 실행할 수 있습니다.
 
 ## Google 연결 설정
 
@@ -118,7 +121,7 @@ CalDAV 어댑터는 아직 실제 계정으로 확인하지 않았습니다. iCl
 
 ## 남은 구현·검증
 
-1. iOS 시뮬레이터 빌드, 실제 기기에서 권한·위젯·알림·백업 확인.
+1. 실제 기기에서 권한·위젯·알림·백업 확인과 Apple 서명 설정.
 2. Google 실제 계정과 iCloud CalDAV 시제품 검증, 취소·권한 철회·충돌·네트워크 중단 테스트.
 3. 반복 일정의 캘린더 전송: 공휴일 예외, 특정 발생일 완료, 원래 반복과 표시 날짜의 양방향 대응. 현재 반복은 로컬만 지원하며 연결된 캘린더로 전송하지 않습니다.
 4. 연도별 공휴일 갱신과 사용자 휴일 입력. 알 수 없는 연도의 휴일 이동은 추측해서 확정하지 않습니다.
