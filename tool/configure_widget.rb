@@ -27,6 +27,7 @@ end
 widget.build_configurations.each do |config|
   runner_config = runner.build_configurations.find { |candidate| candidate.name == config.name }
   config.build_settings.merge!({
+    'PRODUCT_NAME' => '$(TARGET_NAME)',
     'PRODUCT_BUNDLE_IDENTIFIER' => 'dev.dayweave.dayweave.QuickAddWidget',
     'SWIFT_VERSION' => '5.0', 'INFOPLIST_FILE' => 'QuickAddWidget/Info.plist',
     'CODE_SIGN_STYLE' => 'Automatic', 'SKIP_INSTALL' => 'YES',
