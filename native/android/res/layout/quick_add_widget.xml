@@ -1,0 +1,11 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/quick_add" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:gravity="center" android:padding="16dp"
+    android:background="@drawable/widget_background" android:contentDescription="할 일 빠른 등록">
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="＋" android:textSize="36sp" android:textColor="#5B5BD6" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="할 일 추가" android:textSize="16sp" android:textStyle="bold" android:textColor="#24243D" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="dayweave" android:textSize="11sp" android:textColor="#667085" />
+</LinearLayout>

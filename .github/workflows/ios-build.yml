@@ -1,0 +1,58 @@
+name: iOS Xcode build
+
+on:
+  push:
+    branches: [main, build/ios-xcode]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulator:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Inspect Xcode
+        run: |
+          xcodebuild -version
+          xcrun --sdk iphonesimulator --show-sdk-version
+      - name: Install pinned Flutter
+        run: |
+          git clone --depth 1 --branch 3.47.7 https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter-sdk"
+          test "$(git -C "$RUNNER_TEMP/flutter-sdk" rev-parse HEAD)" = abaf9c523780a608bd46686fd5e53740a07077f8
+          echo "$RUNNER_TEMP/flutter-sdk/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/flutter-sdk/bin/flutter" config --no-analytics
+          "$RUNNER_TEMP/flutter-sdk/bin/flutter" --version
+      - name: Prepare native integration
+        run: bash tool/bootstrap.sh
+      - name: Register WidgetKit extension
+        run: |
+          if ! ruby -rxcodeproj -e 'puts Xcodeproj::VERSION'; then
+            gem install --user-install --no-document xcodeproj -v 1.27.0
+          fi
+          ruby tool/configure_widget.rb
+      - name: Build app and widget for iOS Simulator
+        run: |
+          set -o pipefail
+          flutter build ios --simulator --debug --no-pub --no-codesign 2>&1 | tee "$RUNNER_TEMP/ios-build.log"
+          test -d build/ios/iphonesimulator/Runner.app/PlugIns/QuickAddWidget.appex
+          ditto -c -k --sequesterRsrc --keepParent build/ios/iphonesimulator/Runner.app "$RUNNER_TEMP/dayweave-ios-simulator.zip"
+      - name: Upload simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: dayweave-ios-simulator
+          path: ${{ runner.temp }}/dayweave-ios-simulator.zip
+          if-no-files-found: error
+      - name: Upload Xcode build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build-log
+          path: ${{ runner.temp }}/ios-build.log
+          if-no-files-found: ignore
