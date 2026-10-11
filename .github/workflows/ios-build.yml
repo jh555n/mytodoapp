@@ -37,6 +37,9 @@ jobs:
             gem install --user-install --no-document xcodeproj -v 1.27.0
           fi
           ruby tool/configure_widget.rb
+          cp ios/Runner.xcodeproj/project.pbxproj "$RUNNER_TEMP/Runner-with-widget.pbxproj"
+          ruby tool/configure_widget.rb
+          cmp ios/Runner.xcodeproj/project.pbxproj "$RUNNER_TEMP/Runner-with-widget.pbxproj"
           ruby -rxcodeproj -e 'Xcodeproj::Project.open("ios/Runner.xcodeproj").targets.each { |t| puts "#{t.name}: #{t.build_configurations.map { |c| [c.name, c.build_settings["PRODUCT_NAME"]] }.inspect}" }'
       - name: Build app and widget for iOS Simulator
         run: |

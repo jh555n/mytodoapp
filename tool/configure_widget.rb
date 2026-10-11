@@ -14,12 +14,21 @@ unless widget
   source = group.new_file('QuickAddWidget.swift')
   group.new_file('Info.plist')
   widget.add_file_references([source])
-  runner.add_dependency(widget)
-  phase = runner.copy_files_build_phases.find { |p| p.name == 'Embed App Extensions' } ||
-    runner.new_copy_files_build_phase('Embed App Extensions')
-  phase.dst_subfolder_spec = '13'
-  build_file = phase.add_file_reference(widget.product_reference)
-  build_file.settings = { 'ATTRIBUTES' => ['RemoveHeadersOnCopy'] }
+end
+runner.add_dependency(widget) unless runner.dependencies.any? { |dependency| dependency.target == widget }
+phase = runner.copy_files_build_phases.find { |p| p.name == 'Embed App Extensions' } ||
+  runner.new_copy_files_build_phase('Embed App Extensions')
+phase.dst_subfolder_spec = '13'
+build_file = phase.files.find { |file| file.file_ref == widget.product_reference } ||
+  phase.add_file_reference(widget.product_reference)
+build_file.settings ||= {}
+build_file.settings['ATTRIBUTES'] = (build_file.settings['ATTRIBUTES'] || []) | ['RemoveHeadersOnCopy']
+# Flutter's Thin Binary script reads the app's processed Info.plist. Embedding
+# extensions after it creates a cycle through Xcode's bundle validation.
+thin_binary = runner.shell_script_build_phases.find { |p| p.name == 'Thin Binary' }
+if thin_binary
+  runner.build_phases.delete(phase)
+  runner.build_phases.insert(runner.build_phases.index(thin_binary), phase)
 end
 project.targets.each do |target|
   target.build_configurations.each { |config| config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '17.0' }
